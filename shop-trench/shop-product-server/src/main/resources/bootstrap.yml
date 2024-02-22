@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: product-service
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+        server-addr: 127.0.0.1:8848
+  profiles:
+    active: dev
+    #appConfig:
+    #name: gateway    动态更新
+    #在nacos中创建一个product-serve-dev.yaml 后将application.yml文件中数据全部copy到nacos中，并且删除application.yml文件

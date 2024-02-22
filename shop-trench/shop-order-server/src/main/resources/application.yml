@@ -1,0 +1,69 @@
+server:
+  port: 8091
+  #tomcat:
+    #threads:
+    #  max: 250
+spring:
+  #zipkin
+  zipkin:
+    base-url: http://127.0.0.1:9411/
+    discovery-client-enabled: false  #相当于让nacos把它当作一个url，而不要当服务名
+  sleuth:
+    sampler:
+      probability: 1.0 #采样当百分比   正式环境设置为0.1或者0.05这些
+  cloud:
+#    接口限流等操作
+    sentinel:
+      web-context-unify: false
+      transport:
+        port: 9999
+        dashboard: localhost:8080
+    nacos:
+      server-addr: localhost:8848
+  application:
+    name: order-service
+    #数据库配置
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/shop?characterEncoding=utf-8&amp&serverTimezone=UTC&amp&useSSL=false
+    password: 12345678
+    username: root
+#jpa配置
+  jpa:
+    database: MYSQL
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+#调用服务者的名称 ribbon  通过配置文件操作
+order-service:
+  ribbon:
+    #NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule  #随机
+   # NFLoadBalancerRuleClassName: com.netflix.loadbalancer.NacosRule  权重
+    NFLoadBalancerRuleClassName: com.trench.RibbonCofigRule   #自定义的权重
+
+#feign整合section
+feign:
+  sentinel:
+    enabled: true
+  #设置为默认的契约 还原成默认的注解
+  #client:
+    #config:
+     # order-service:
+      #  loggerLevel: BASIC
+        #contract: feign.Contract.Default  设置为默认的契约
+    #第二种配置文件操作
+    #设置超时时间
+  client:
+    config:
+      order-service:
+        connectTimeout: 5000  #请求链接超时时间
+        readTimeout: 10000   #请求处理超时时间
+        #配置拦截器全局
+        requestInterceptors:
+          - com.trench.util.feign.FeignAuthInterceptor
+
+logging:
+  level:
+    com.trench.util.feign.FeignCofig: INFO   #自定义feign的日志返回全局

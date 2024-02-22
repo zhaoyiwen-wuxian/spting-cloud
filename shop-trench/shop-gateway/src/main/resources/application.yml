@@ -1,0 +1,55 @@
+server:
+  port: 9000
+spring:
+  application:
+    name: api-gateway
+  cloud:
+
+    nacos:
+      server-addr: localhost:8848
+    sentinel:
+      transport:
+        port: 9999
+        dashboard: localhost:8080
+        #自定义返回类型
+      scg:
+        fallback:
+          mode: response
+          response-body: "{code:'',message:''}"
+          response-status: 200
+      #修改路由规则
+    gateway:
+      #跨域
+      globalcors:
+        cors-configurations:
+          '[/**]': #允许跨域的访问资源
+            allowedOrigins:
+              - "https://docs.spring.io" #跨域允许来源
+            allowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+      routes:
+        - id: product-route #路由名称保证唯一就行
+          uri: lb://product-service #转发等路径   lb表示对服务进行负载均衡
+          order: 1      #数值越小约靠前排序，如果不写order：那么使用默认对排序，从上到下
+          predicates:
+            - Path=/product/**   #拦截哪些请求，
+            - CheckAuth=trench  #自定义传参数，如果不填将会被拦截因为相应的代码中已做处理。
+          filters:
+            - stripPrefix=1 #过滤器，转发请求之前，将拦截对路径，第一层路径给删除掉，写2就是删除前面两层路径
+            - Time = true
+        - id: order-route
+          uri: lb://order-service
+          predicates:
+            - Path=/order/**
+          filters:
+            - AddRequestHeader=X-Request-color,red #添加请求头
+            - stripPrefix=1   #接口的前缀是否隐藏到第二个
+            - Time=true
+            - PrefixPath=/trench   #添加统一的前缀域名，对应的微服务也要进行添加
+            - RedirectTo=302 ,https://www.baidu.com #重定向到其他接口或者
+      discovery:
+        locator:
+          enabled: true #让Gateway可以发现nacos中的微服务
